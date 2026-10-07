@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Galaxia del Amor 3D 🌌💖✨</title>
+<style>
+  * { 
+    box-sizing: border-box; 
+    user-select: none; 
+    -webkit-user-select: none; 
+  }
+  
+  body, html { 
+    margin: 0; 
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; 
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+    background: #01000b;
+    touch-action: none;
+  }
+
+  /* Capa de la Galaxia Three.js */
+  #container { 
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%; 
+    height: 100%; 
+    z-index: 1;
+  }
+
+  /* Cartel flotante neón de cristal Glossy */
+  .tooltip { 
+    position: absolute; 
+    background: rgba(18, 5, 38, 0.94); 
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    color: #ffffff; 
+    padding: 16px 26px; 
+    border-radius: 24px; 
+    pointer-events: none; 
+    font-weight: 800; 
+    display: none; 
+    z-index: 1000; 
+    font-size: 15.5px; 
+    text-align: center;
+    box-shadow: 0 15px 40px rgba(255, 0, 128, 0.6), 0 0 30px rgba(0, 229, 255, 0.65), inset 0 0 15px rgba(255, 255, 255, 0.25);
+    border: 1.8px solid rgba(255, 190, 245, 0.8);
+    transform: translate(-50%, -125%);
+    letter-spacing: 0.6px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+    transition: opacity 0.3s ease;
+  }
+</style>
+</head>
+<body>
+
+<div id="container"></div>
+<div class="tooltip" id="tooltip"></div>
+
+<!-- Música local -->
+<audio id="bgMusic" src="cancion.mp3" loop preload="auto"></audio>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+<script>
+const music = document.getElementById("bgMusic");
+const tooltip = document.getElementById("tooltip");
+
+let audioUnlocked = false;
+
+// Iniciar audio al primer toque en la pantalla
+function unlockAudio() {
+  if (!audioUnlocked && music) {
+    music.play().then(() => {
+      audioUnlocked = true;
+    }).catch(err => console.log("Esperando toque...", err));
+  }
+}
+
+window.addEventListener("pointerdown", unlockAudio, { once: false });
+
+// --- ESCENA THREE.JS COMPLETA ---
+const container = document.getElementById("container");
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 4000);
+camera.position.z = 850;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+container.appendChild(renderer.domElement);
+
+// ILUMINACIÓN ESPACIAL 3D
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+scene.add(ambientLight);
+
+const sunPointLight = new THREE.PointLight(0xffe066, 2.8, 1500);
+scene.add(sunPointLight);
+
+// FONDO DENSE DE ESTRELLAS Y NEBULOSA
+const starCount = 4500;
+const starGeo = new THREE.BufferGeometry();
+const starPos = new Float32Array(starCount * 3);
+for(let i = 0; i < starCount * 3; i++) {
+  starPos[i] = (Math.random() - 0.5) * 3800;
+}
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2.2, transparent: true, opacity: 0.95 });
+scene.add(new THREE.Points(starGeo, starMat));
+
+function createNebulaTexture(c1, c2) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext("2d");
+  const grad = ctx.createRadialGradient(128, 128, 10, 128, 128, 120);
+  grad.addColorStop(0, c1);
+  grad.addColorStop(0.5, c2);
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(canvas);
+}
+
+const nebulaColors = [
+  ['rgba(255, 0, 170, 0.38)', 'rgba(90, 0, 150, 0.18)'],
+  ['rgba(0, 230, 255, 0.32)', 'rgba(0, 60, 140, 0.15)'],
+  ['rgba(255, 215, 0, 0.30)', 'rgba(150, 60, 0, 0.15)']
+];
+
+nebulaColors.forEach(cols => {
+  const nebMat = new THREE.SpriteMaterial({ map: createNebulaTexture(cols[0], cols[1]), transparent: true, blending: THREE.AdditiveBlending });
+  for(let i = 0; i < 6; i++) {
+    const neb = new THREE.Sprite(nebMat);
+    neb.position.set((Math.random() - 0.5) * 2200, (Math.random() - 0.5) * 1800, -1000);
+    neb.scale.set(1400, 1400, 1);
+    scene.add(neb);
+  }
+});
+
+// POLVO ESTELAR AMBIENTAL DENSE
+const dustCount = 1000;
+const dustGeo = new THREE.BufferGeometry();
+const dustPos = new Float32Array(dustCount * 3);
+for(let i = 0; i < dustCount * 3; i++) {
+  dustPos[i] = (Math.random() - 0.5) * 1600;
+}
+dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+const dustMat = new THREE.PointsMaterial({ color: 0xFFB74D, size: 3.5, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending });
+const dustMesh = new THREE.Points(dustGeo, dustMat);
+scene.add(dustMesh);
+
+// SOL CENTRAL BRILLANTE
+const sunGroup = new THREE.Group();
+
+const sunMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(75, 32, 32),
+  new THREE.MeshBasicMaterial({ color: 0xfffcd0 })
+);
+sunGroup.add(sunMesh);
+
+function createGlowTexture(c1, c2) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 128; canvas.height = 128;
+  const ctx = canvas.getContext("2d");
+  const grad = ctx.createRadialGradient(64, 64, 8, 64, 64, 60);
+  grad.addColorStop(0, c1);
+  grad.addColorStop(0.5, c2);
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(canvas);
+}
+
+const innerGlow = new THREE.Sprite(new THREE.SpriteMaterial({ 
+  map: createGlowTexture('rgba(255, 255, 250, 1)', 'rgba(255, 210, 0, 0.95)'), 
+  transparent: true, blending: THREE.AdditiveBlending 
+}));
+innerGlow.scale.set(300, 300, 1);
+sunGroup.add(innerGlow);
+
+const outerGlow = new THREE.Sprite(new THREE.SpriteMaterial({ 
+  map: createGlowTexture('rgba(255, 70, 0, 0.8)', 'rgba(255, 0, 120, 0)'), 
+  transparent: true, blending: THREE.AdditiveBlending 
+}));
+outerGlow.scale.set(500, 500, 1);
+sunGroup.add(outerGlow);
+
+// Rayos Solares
+const sunRays = new THREE.Group();
+const sunRaysRev = new THREE.Group();
+for(let i = 0; i < 36; i++) {
+  const ray = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.5, 5, 280, 8),
+    new THREE.MeshBasicMaterial({ color: 0xFF9900, transparent: true, opacity: 0.38, blending: THREE.AdditiveBlending })
+  );
+  ray.rotation.z = Math.random() * Math.PI * 2;
+  ray.rotation.x = Math.random() * Math.PI;
+  if (i % 2 === 0) sunRays.add(ray);
+  else sunRaysRev.add(ray);
+}
+sunGroup.add(sunRays);
+sunGroup.add(sunRaysRev);
+scene.add(sunGroup);
+
+// Anillo Orbital Dorado
+const ringGeo = new THREE.BufferGeometry();
+const ringPos = new Float32Array(800 * 3);
+for(let i = 0; i < 800; i++) {
+  const r = 150 + Math.random() * 120;
+  const t = Math.random() * Math.PI * 2;
+  ringPos[i * 3] = r * Math.cos(t);
+  ringPos[i * 3 + 1] = (Math.random() - 0.5) * 24;
+  ringPos[i * 3 + 2] = r * Math.sin(t);
+}
+ringGeo.setAttribute('position', new THREE.BufferAttribute(ringPos, 3));
+const ringMesh = new THREE.Points(ringGeo, new THREE.PointsMaterial({ color: 0xFFE066, size: 3.2, transparent: true, opacity: 0.92, blending: THREE.AdditiveBlending }));
+ringMesh.rotation.x = 0.45;
+scene.add(ringMesh);
+
+// PLANETAS EN ÓRBITA
+const planetsGroup = new THREE.Group();
+const planetData = [
+  { r: 240, speed: 0.012, size: 15, color: 0x00E5FF },
+  { r: 340, speed: 0.008, size: 19, color: 0xFF4081 },
+  { r: 440, speed: 0.005, size: 24, color: 0xB388FF },
+  { r: 540, speed: 0.003, size: 17, color: 0x69F0AE }
+];
+
+const planets = [];
+planetData.forEach((d) => {
+  const pMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(d.size, 32, 32),
+    new THREE.MeshPhongMaterial({ color: d.color, emissive: d.color, emissiveIntensity: 0.3, shininess: 50 })
+  );
+  
+  const pRingGeo = new THREE.RingGeometry(d.size + 5, d.size + 14, 32);
+  const pRingMat = new THREE.MeshBasicMaterial({ color: d.color, side: THREE.DoubleSide, transparent: true, opacity: 0.7 });
+  const pRing = new THREE.Mesh(pRingGeo, pRingMat);
+  pRing.rotation.x = Math.PI / 2.3;
+  pMesh.add(pRing);
+
+  planetsGroup.add(pMesh);
+  planets.push({ mesh: pMesh, r: d.r, speed: d.speed, angle: Math.random() * Math.PI * 2 });
+});
+scene.add(planetsGroup);
+
+// CORAZONES FLOTANTES MULTIPLICADOS
+const heartsGroup = new THREE.Group();
+const heartCanvas = document.createElement("canvas");
+heartCanvas.width = 32; heartCanvas.height = 32;
+const hCtx = heartCanvas.getContext("2d");
+hCtx.font = "24px Arial";
+hCtx.fillText("💖", 2, 26);
+const heartTex = new THREE.CanvasTexture(heartCanvas);
+const heartMat = new THREE.SpriteMaterial({ map: heartTex, transparent: true });
+
+for(let i = 0; i < 120; i++) {
+  const h = new THREE.Sprite(heartMat);
+  h.position.set((Math.random() - 0.5) * 1300, Math.random() * 850 - 425, (Math.random() - 0.5) * 1300);
+  h.scale.set(22, 22, 1);
+  heartsGroup.add(h);
+}
+scene.add(heartsGroup);
+
+// COMETA / ESTRELLA FUGAZ
+let meteorSprite = null;
+let meteorActive = false;
+let meteorVel = new THREE.Vector3();
+
+function spawnMeteor() {
+  if (meteorActive) return;
+  const canvas = document.createElement("canvas");
+  canvas.width = 256; canvas.height = 32;
+  const ctx = canvas.getContext("2d");
+  const grad = ctx.createLinearGradient(0, 16, 256, 16);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.2, 'rgba(0,229,255,0.9)');
+  grad.addColorStop(0.6, 'rgba(255,60,180,0.6)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 256, 32);
+
+  meteorSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, blending: THREE.AdditiveBlending }));
+  meteorSprite.position.set((Math.random() - 0.5) * 1000, 450 + Math.random() * 100, (Math.random() - 0.5) * 500);
+  meteorSprite.scale.set(260, 55, 1);
+  scene.add(meteorSprite);
+  
+  meteorVel.set(-13 - Math.random() * 6, -11 - Math.random() * 4, -2);
+  meteorActive = true;
+}
+
+// FUEGO ARTIFICIAL AL TOCAR
+const pCount = 140;
+const pGeo = new THREE.BufferGeometry();
+const pPos = new Float32Array(pCount * 3);
+const pVel = new Float32Array(pCount * 3);
+
+for(let i = 0; i < pCount * 3; i++) pPos[i] = 0;
+pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+const pSystem = new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0xFF4081, size: 6.8, transparent: true, blending: THREE.AdditiveBlending }));
+scene.add(pSystem);
+
+function triggerSparks(x, y, z) {
+  const pos = pGeo.attributes.position.array;
+  for(let i = 0; i < pCount; i++) {
+    const idx = i * 3;
+    pos[idx] = x; pos[idx+1] = y; pos[idx+2] = z;
+    const th = Math.random() * Math.PI * 2, ph = Math.random() * Math.PI, sp = Math.random() * 11 + 4;
+    pVel[idx] = Math.sin(ph) * Math.cos(th) * sp;
+    pVel[idx+1] = Math.sin(ph) * Math.sin(th) * sp;
+    pVel[idx+2] = Math.cos(ph) * sp;
+  }
+  pGeo.attributes.position.needsUpdate = true;
+}
+
+// PALABRAS HERMOSAS Y LINDAS
+const words = [
+  "🧸 Mi niño", "💖 Mi chiquito", "🥺 Mi patojo", "🌟 Mi niño lindo", "🧸 Mi ternura", 
+  "✨ Mi cielito", "🌟 Mi estrella", "💘 Mi felicidad", "🌙 Mi mundo entero", "✨ Siempre tú", 
+  "💞 Mi amorcito", "🌸 Mi alegría", "🌈 Mi luz", "☀️ Mi solcito", "🕊️ Mi paz", 
+  "💌 Mi corazón", "🌺 Mi vida", "💫 Mi magia", "🌻 Mi niño hermoso", "🌼 Mi tesoro", 
+  "🎀 Mi regalo", "🍓 Mi dulzura", "🎈 Mi osito", "💙 Mi niño bello", "🚀 Mi galaxia",
+  "🧸 Mi niño consentido", "💖 Mi persona favorita", "🥰 Mi carita linda", "👑 Mi pequeño",
+  "⭐ Mi angelito", "✨ Mi abrazo dulce", "🌷 Mi niño adorable", "🍀 Mi suerte",
+  "☀️ Mi día bonito", "💌 Mi pensamiento lindo", "🌟 Mi universo", "🍬 Mi niño dulce"
+];
+
+const specialMessages = {
+  "🧸 Mi niño": "🧸 ¡Eres mi niño consentido y el más lindo de todos! 💕✨",
+  "💖 Mi chiquito": "💖 Eres mi chiquito hermoso y mi persona favorita 🥰",
+  "🥺 Mi patojo": "🥺 ¡Eres el patojo más especial de todo el mundo! 🌸✨",
+  "🌟 Mi niño lindo": "🌟 Eres un niño super dulce que ilumina todos mis días 💛✨",
+  "💌 Mi corazón": "💌 Mi corazón es completamente tuyo, mi niño bello 💓",
+  "🌟 Mi estrella": "🌟 Brillas con una luz hermosa que nadie más tiene 🌌✨",
+  "☀️ Mi solcito": "☀️ Eres como un rayito de sol que me alegra siempre ☀️💖",
+  "✨ Siempre tú": "✨ De aquí hasta las estrellas, siempre voy a quererte a ti 🥰💍",
+  "🧸 Mi niño consentido": "🧸 Eres mi niño mimado y la razón de mis sonrisas 💕",
+  "👑 Mi pequeño": "👑 Eres mi niño valiente y super inteligente 🏆✨",
+  "🚀 Mi galaxia": "🚀 ¡Tu sonrisa hace que todo mi mundo sea hermoso! 🌌💖"
+};
+
+const generalMessages = [
+  "💖 Eres el niño más lindo y cariñoso de todos 💖",
+  "🌟 Eres mi persona favorita en todo el universo 🌟",
+  "🥰 Te quiero muchisisísimo con todo mi corazón 🥰",
+  "💞 Siempre me sacas la sonrisa más bonita 💞",
+  "✨ Haces que cada día sea bonito y especial a tu lado ✨",
+  "💌 Eres mi mayor alegría todos los días 💌",
+  "🌸 ¡Me encanta todo de ti, mi chiquito lindo! 🌸",
+  "🎈 Gracias por ser tan tierno y lindo conmigo 🎈",
+  "🧸 Eres un niño increíble y super lindo 🧸",
+  "⭐ Tu ternura me alegra la vida entera ⭐"
+];
+
+const colors = ["#FF6B95", "#FF8E53", "#FFD700", "#69F0AE", "#40C4FF", "#B388FF", "#FF4081", "#FF80AB"];
+const materialCache = {};
+
+function getWordSprite(text) {
+  if(!materialCache[text]) {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    ctx.font = "Bold 38px Arial, sans-serif";
+    const w = Math.ceil(ctx.measureText(text).width + 28);
+    canvas.width = w; canvas.height = 58;
+
+    ctx.font = "Bold 38px Arial, sans-serif";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+    ctx.shadowColor = "rgba(0,0,0,0.95)";
+    ctx.shadowBlur = 8;
+    ctx.fillText(text, 14, 29);
+
+    materialCache[text] = {
+      mat: new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true }),
+      w: w / 2.1, h: 58 / 2.1
+    };
+  }
+  return materialCache[text];
+}
+
+// Esfera de Palabras
+const group = new THREE.Group();
+const totalWords = 360;
+const radius = 520;
+const sprites = [];
+
+for(let i = 0; i < totalWords; i++) {
+  const text = words[i % words.length];
+  const { mat, w, h } = getWordSprite(text);
+  
+  const sprite = new THREE.Sprite(mat);
+  const theta = Math.random() * 2 * Math.PI;
+  const phi = Math.acos(2 * Math.random() - 1);
+  
+  sprite.position.x = radius * Math.sin(phi) * Math.cos(theta);
+  sprite.position.y = radius * Math.sin(phi) * Math.sin(theta);
+  sprite.position.z = radius * Math.cos(phi);
+  
+  sprite.scale.set(w, h, 1);
+  
+  const msg = specialMessages[text] || generalMessages[Math.floor(Math.random() * generalMessages.length)];
+  sprite.userData = { message: msg, baseW: w, baseH: h };
+  
+  group.add(sprite);
+  sprites.push(sprite);
+}
+scene.add(group);
+
+// ANIMACIÓN PRINCIPAL
+let targetRotX = 0, targetRotY = 0;
+let currentRotX = 0, currentRotY = 0;
+
+function animate() {
+  requestAnimationFrame(animate);
+  
+  currentRotX += (targetRotX - currentRotX) * 0.04;
+  currentRotY += (targetRotY - currentRotY) * 0.04;
+  
+  group.rotation.x = currentRotX;
+  group.rotation.y = currentRotY + Date.now() * 0.00028;
+  
+  dustMesh.rotation.y += 0.0007;
+
+  // Órbita de planetas
+  planets.forEach(p => {
+    p.angle += p.speed;
+    p.mesh.position.x = p.r * Math.cos(p.angle);
+    p.mesh.position.z = p.r * Math.sin(p.angle);
+    p.mesh.rotation.y += 0.022;
+  });
+
+  // Caída de corazones
+  heartsGroup.children.forEach(h => {
+    h.position.y -= 0.65;
+    if(h.position.y < -425) h.position.y = 425;
+  });
+  
+  // Sol animado
+  const pulse = 1 + Math.sin(Date.now() * 0.004) * 0.07;
+  innerGlow.scale.set(300 * pulse, 300 * pulse, 1);
+  outerGlow.scale.set(500 * pulse, 500 * pulse, 1);
+  sunRays.rotation.y += 0.004;
+  sunRaysRev.rotation.y -= 0.003;
+  ringMesh.rotation.y += 0.0028;
+  
+  // Cometa
+  if (Math.random() < 0.007) spawnMeteor();
+  if (meteorActive && meteorSprite) {
+    meteorSprite.position.add(meteorVel);
+    if (meteorSprite.position.y < -500) {
+      scene.remove(meteorSprite);
+      meteorSprite = null;
+      meteorActive = false;
+    }
+  }
+
+  // Animación de chispas
+  const pos = pGeo.attributes.position.array;
+  for(let i = 0; i < pCount; i++) {
+    const idx = i * 3;
+    pos[idx] += pVel[idx]; pos[idx+1] += pVel[idx+1]; pos[idx+2] += pVel[idx+2];
+    pVel[idx] *= 0.92; pVel[idx+1] *= 0.92; pVel[idx+2] *= 0.92;
+  }
+  pGeo.attributes.position.needsUpdate = true;
+  
+  renderer.render(scene, camera);
+}
+animate();
+
+// MANEJO DE SELECCIÓN Y OCULTADO AUTOMÁTICO DE CARTELES
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let activeSprite = null;
+let tooltipTimeout = null;
+
+function hideTooltip() {
+  if (activeSprite) {
+    activeSprite.scale.set(activeSprite.userData.baseW, activeSprite.userData.baseH, 1);
+    activeSprite = null;
+  }
+  tooltip.style.display = 'none';
+}
+
+function checkTouch(clientX, clientY) {
+  mouse.x = (clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+  
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(sprites);
+  
+  if(intersects.length > 0) {
+    const hit = intersects[0].object;
+    
+    if(activeSprite) {
+      activeSprite.scale.set(activeSprite.userData.baseW, activeSprite.userData.baseH, 1);
+    }
+    
+    activeSprite = hit;
+    activeSprite.scale.set(activeSprite.userData.baseW * 1.55, activeSprite.userData.baseH * 1.55, 1);
+    
+    tooltip.innerText = hit.userData.message;
+    tooltip.style.display = 'block';
+    tooltip.style.left = clientX + 'px';
+    tooltip.style.top = (clientY - 12) + 'px';
+    
+    triggerSparks(hit.position.x, hit.position.y, hit.position.z);
+
+    // Ocultar mensaje automáticamente tras 3.5 segundos
+    clearTimeout(tooltipTimeout);
+    tooltipTimeout = setTimeout(hideTooltip, 3500);
+
+  } else {
+    hideTooltip();
+  }
+}
+
+let isDragging = false, prevX = 0, prevY = 0;
+
+window.addEventListener("pointerdown", e => {
+  isDragging = true;
+  prevX = e.clientX; 
+  prevY = e.clientY;
+  checkTouch(e.clientX, e.clientY);
+});
+
+window.addEventListener("pointermove", e => {
+  if(isDragging) {
+    targetRotY += (e.clientX - prevX) * 0.005;
+    targetRotX += (e.clientY - prevY) * 0.005;
+    prevX = e.clientX; 
+    prevY = e.clientY;
+  }
+});
+
+window.addEventListener("pointerup", () => {
+  isDragging = false;
+});
+
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
